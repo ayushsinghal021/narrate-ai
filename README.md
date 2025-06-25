@@ -1,9 +1,5 @@
 # 📊 NarratorAI: Automated Data Storytelling Bot
 
-[![Python Version][python-shield]][python-url]
-[![Streamlit Version][streamlit-shield]][streamlit-url]
-[![License: MIT][license-shield]][license-url]
-
 **NarratorAI** is a sophisticated application that transforms raw data into compelling, human-readable narratives. Using advanced AI/ML techniques and statistical analysis, this bot can automatically analyze an uploaded dataset, identify key patterns, generate dynamic visualizations, and produce an insightful data story in plain language.
 
 This project demonstrates expertise in the full data science lifecycle, from ETL and data cleaning to predictive modeling and AI-powered natural language generation (NLG).
