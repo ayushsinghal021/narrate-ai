@@ -4,9 +4,6 @@
 
 This project demonstrates expertise in the full data science lifecycle, from ETL and data cleaning to predictive modeling and AI-powered natural language generation (NLG).
 
-
-*(This is a placeholder image. You can replace this link after you take a screenshot of your running app!)*
-
 ---
 
 ## ✨ Core Features
