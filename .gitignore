@@ -1,0 +1,27 @@
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# IDE and OS-specific files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Generated output files
+
+output/
+temp_data/
+
+# Large data files
+data/*.csv
+data/*.json
+data/*.sas7bdat
+
+# Hugging Face model cache (if it gets created locally)
+.cache/
+huggingface/
+
+# Streamlit config
+.streamlit/
