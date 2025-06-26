@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import os
 import json
 import pandas as pd
@@ -58,17 +59,26 @@ if uploaded_file is not None:
             index=len(column_options) - 1 # Default to the last column
         )
         
+        # In app.py
         if st.button(f"Analyze '{target_col}'", type="primary"):
-            # Run the pipeline
             with st.spinner("Our AI is analyzing your data... This may take a moment."):
                 try:
                     report_path = run_full_pipeline(filepath, target_col)
-                    with open(report_path, 'r') as f:
-                        st.session_state.report = json.load(f)
-                    st.session_state.analysis_done = True
+                    
+                    # <<< --- NEW CHECK --- >>>
+                    if report_path:
+                        with open(report_path, 'r') as f:
+                            st.session_state.report = json.load(f)
+                        st.session_state.analysis_done = True
+                    else:
+                        # Handle the case where the pipeline found nothing
+                        st.session_state.report = None
+                        st.session_state.analysis_done = False
+                        st.warning("Analysis complete, but no significant insights were found with the current data and criteria.")
+
                 except Exception as e:
                     st.error(f"An error occurred during the analysis pipeline: {e}")
-                    st.exception(e) # This will print the full traceback for debugging
+                    st.exception(e)
                     st.session_state.analysis_done = False
     
     except Exception as e:
@@ -95,7 +105,7 @@ if st.session_state.analysis_done and st.session_state.report:
             if insight['plot_path'] and os.path.exists(insight['plot_path']):
                 with open(insight['plot_path'], 'r', encoding='utf-8') as plot_file:
                     plot_html = plot_file.read()
-                st.markdown.v1.html(plot_html, height=450, scrolling=True)
+                components.html(plot_html, height=450, scrolling=True)
             else:
                 st.warning("No visualization was generated for this insight.")
         st.markdown("---")

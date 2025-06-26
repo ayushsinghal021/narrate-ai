@@ -9,3 +9,6 @@ transformers
 torch
 saspy
 Jinja2
+openai  
+requests
+statsmodels
