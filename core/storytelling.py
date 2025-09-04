@@ -10,7 +10,7 @@ from openai import OpenAI, APIConnectionError
 import torch
 
 # --- Configuration ---
-LOCAL_LLM_URL = "http://192.168.1.6:1234/v1"
+LOCAL_LLM_URL = "http://127.0.0.1:1234/v1"
 
 # --- Global Model Initialization ---
 try:
@@ -108,12 +108,16 @@ def generate_narrative_from_insight(insight: dict) -> str:
 
 # Visualization function is unchanged
 def create_visualization(insight: dict, df: pd.DataFrame, output_dir: str) -> str | None:
-    # (No changes needed in this function)
     fig = None
-    feature_name = insight['details'].get('feature1', insight['details'].get('numeric_feature', 'feature_importance'))
+    details = insight.get('details', {})
+    # Only proceed if details is a dict
+    if not isinstance(details, dict):
+        print(f"Skipping visualization for insight '{insight.get('title', '')}' because details is not a dict.")
+        return None
+
+    feature_name = details.get('feature1', details.get('numeric_feature', 'feature_importance'))
     filename = f"{insight['type']}_{feature_name}.html"
     filepath = os.path.join(output_dir, filename)
-    details = insight['details']
     try:
         if insight['type'] == 'correlation':
             if details['feature1'] in df.columns and details['feature2'] in df.columns:

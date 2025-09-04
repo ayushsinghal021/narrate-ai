@@ -3,20 +3,21 @@ import json
 from jinja2 import Environment, FileSystemLoader
 from core import cleaning, analysis, modeling, storytelling
 
-def run_full_pipeline(filepath, target_col):
+def run_full_pipeline(fname, data, target_col):
     """
     Orchestrates the entire data storytelling pipeline with added debugging.
     """
-    session_id = os.path.basename(filepath).split('.')[0]
-    output_dir = os.path.join('output', session_id)
+    #session_id = os.path.basename(filepath).split('.')[0]
+    output_dir = os.path.join('output')
     os.makedirs(output_dir, exist_ok=True)
     
-    report = {"title": f"Data Story for {session_id}", "insights": []}
+    report = {"title": f"Data Story for {fname}", "insights": []}
 
     # Task 1: Ingest and Clean Data
     print("Pipeline Task 1: Loading and Cleaning Data...")
-    df_raw = cleaning.load_data(filepath)
-    df_clean, metadata = cleaning.clean_and_preprocess_data(df_raw.copy())
+    #df_raw = cleaning.load_data(filepath)
+    #df_raw = data
+    df_clean, metadata = cleaning.clean_and_preprocess_data(data)
     
     # Task 2: Statistical Analysis
     print("Pipeline Task 2: Running Statistical Analysis...")

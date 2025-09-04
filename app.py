@@ -4,7 +4,7 @@ import os
 import json
 import pandas as pd
 from pipeline import run_full_pipeline
-from core.cleaning import load_data # We need this to get column names
+from core.cleaning import load_data
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -40,15 +40,15 @@ if 'report' not in st.session_state:
 
 if uploaded_file is not None:
     # Save the uploaded file to a temporary location
-    temp_dir = "temp_data"
-    os.makedirs(temp_dir, exist_ok=True)
-    filepath = os.path.join(temp_dir, uploaded_file.name)
-    with open(filepath, "wb") as f:
-        f.write(uploaded_file.getvalue())
+    #temp_dir = "temp_data"
+    #os.makedirs(temp_dir, exist_ok=True)
+    #filepath = os.path.join(temp_dir, uploaded_file.name)
+    #with open(filepath, "wb") as f:
+    #    f.write(uploaded_file.getvalue())
 
     # Load data just to get column names for the selectbox
     try:
-        df_cols = load_data(filepath)
+        df_cols = load_data(uploaded_file, uploaded_file.name)
         column_options = df_cols.columns.tolist()
 
         # --- NEW: Target Column Selection ---
@@ -63,7 +63,7 @@ if uploaded_file is not None:
         if st.button(f"Analyze '{target_col}'", type="primary"):
             with st.spinner("Our AI is analyzing your data... This may take a moment."):
                 try:
-                    report_path = run_full_pipeline(filepath, target_col)
+                    report_path = run_full_pipeline(uploaded_file.name, df_cols, target_col)
                     
                     # <<< --- NEW CHECK --- >>>
                     if report_path:

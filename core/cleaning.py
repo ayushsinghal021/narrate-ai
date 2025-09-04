@@ -2,15 +2,15 @@ import pandas as pd
 import numpy as np
 from sklearn.impute import SimpleImputer
 
-def load_data(file_path):
+def load_data(file_obj, file_name):
     """Loads data from CSV, JSON, or SAS files."""
-    if file_path.endswith('.csv'):
-        df = pd.read_csv(file_path)
-    elif file_path.endswith('.json'):
-        df = pd.read_json(file_path)
-    elif file_path.endswith('.sas7bdat'):
+    if file_name.endswith('.csv'):
+        df = pd.read_csv(file_obj)
+    elif file_name.endswith('.json'):
+        df = pd.read_json(file_obj)
+    elif file_name.endswith('.sas7bdat'):
         try:
-            df = pd.read_sas(file_path)
+            df = pd.read_sas(file_obj)
         except Exception as e:
             raise ConnectionError(f"Failed to read SAS file. Ensure 'saspy' is installed and configured if needed. Error: {e}")
     else:
