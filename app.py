@@ -3,7 +3,8 @@ import streamlit.components.v1 as components
 import os
 import json
 import pandas as pd
-from pipeline import run_full_pipeline
+import requests
+import time
 from core.cleaning import load_data
 
 # --- Page Configuration ---
@@ -12,6 +13,9 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
+
+# --- API Configuration ---
+API_URL = "http://127.0.0.1:8000"
 
 # --- Sidebar ---
 st.sidebar.title("NarratorAI 🤖")
@@ -32,57 +36,81 @@ st.markdown("Upload your dataset, select a target column, and let our AI do the 
 # File Uploader
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
-# Initialize session state to hold information
+# Initialize session state
+if 'task_id' not in st.session_state:
+    st.session_state.task_id = None
 if 'analysis_done' not in st.session_state:
     st.session_state.analysis_done = False
 if 'report' not in st.session_state:
     st.session_state.report = None
 
 if uploaded_file is not None:
-    # Save the uploaded file to a temporary location
-    #temp_dir = "temp_data"
-    #os.makedirs(temp_dir, exist_ok=True)
-    #filepath = os.path.join(temp_dir, uploaded_file.name)
-    #with open(filepath, "wb") as f:
-    #    f.write(uploaded_file.getvalue())
-
-    # Load data just to get column names for the selectbox
     try:
         df_cols = load_data(uploaded_file, uploaded_file.name)
         column_options = df_cols.columns.tolist()
+        uploaded_file.seek(0)
 
-        # --- NEW: Target Column Selection ---
         st.info("Step 2: Select the column you want to analyze or predict.")
         target_col = st.selectbox(
             "Which column is your primary target?",
             options=column_options,
-            index=len(column_options) - 1 # Default to the last column
+            index=len(column_options) - 1
         )
         
-        # In app.py
         if st.button(f"Analyze '{target_col}'", type="primary"):
-            with st.spinner("Our AI is analyzing your data... This may take a moment."):
-                try:
-                    report_path = run_full_pipeline(uploaded_file.name, df_cols, target_col)
-                    
-                    # <<< --- NEW CHECK --- >>>
-                    if report_path:
-                        with open(report_path, 'r') as f:
-                            st.session_state.report = json.load(f)
-                        st.session_state.analysis_done = True
-                    else:
-                        # Handle the case where the pipeline found nothing
-                        st.session_state.report = None
-                        st.session_state.analysis_done = False
-                        st.warning("Analysis complete, but no significant insights were found with the current data and criteria.")
+            st.session_state.analysis_done = False
+            st.session_state.report = None
+            st.session_state.task_id = None
 
-                except Exception as e:
-                    st.error(f"An error occurred during the analysis pipeline: {e}")
-                    st.exception(e)
-                    st.session_state.analysis_done = False
-    
+            with st.spinner("Sending your request to the analysis engine..."):
+                files = {'file': (uploaded_file.name, uploaded_file.getvalue(), 'text/csv')}
+                data = {'target_col': target_col}
+                try:
+                    response = requests.post(f"{API_URL}/analyze", files=files, data=data)
+                    if response.status_code == 200:
+                        st.session_state.task_id = response.json().get('task_id')
+                        st.success("Analysis started! You can see the progress below.")
+                    else:
+                        st.error(f"Failed to start analysis: {response.text}")
+                except requests.exceptions.ConnectionError as e:
+                    st.error(f"Could not connect to the analysis engine. Please make sure the API is running. Error: {e}")
+
     except Exception as e:
         st.error(f"Could not read the uploaded file. Please check the format. Error: {e}")
+
+if st.session_state.task_id and not st.session_state.analysis_done:
+    with st.spinner("Polling for analysis status..."):
+        while True:
+            try:
+                status_response = requests.get(f"{API_URL}/status/{st.session_state.task_id}")
+                if status_response.status_code == 200:
+                    status = status_response.json().get('status')
+                    if status == 'completed':
+                        results_response = requests.get(f"{API_URL}/results/{st.session_state.task_id}")
+                        if results_response.status_code == 200:
+                            report_path = results_response.json().get('result')
+                            if report_path and os.path.exists(report_path):
+                                with open(report_path, 'r') as f:
+                                    st.session_state.report = json.load(f)
+                                st.session_state.analysis_done = True
+                                st.rerun()
+                            else:
+                                st.error("Analysis complete, but the report file was not found.")
+                                break
+                        else:
+                            st.error(f"Failed to get results: {results_response.text}")
+                            break
+                    elif status == 'failed':
+                        st.error("Analysis failed. Please check the logs.")
+                        break
+                    else:
+                        time.sleep(5) # Poll every 5 seconds
+                else:
+                    st.error(f"Failed to get status: {status_response.text}")
+                    break
+            except requests.exceptions.ConnectionError as e:
+                st.error(f"Could not connect to the analysis engine. Please make sure the API is running. Error: {e}")
+                break
 
 # Display the report if analysis is done
 if st.session_state.analysis_done and st.session_state.report:
